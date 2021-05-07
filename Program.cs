@@ -73,15 +73,14 @@ namespace CosmosDemo
                         else if(serverLine == "status")
                         {                            
                             Console.WriteLine("Cosmos Service Endpoint: " + cosmosDb.client.Endpoint);                            
-                            Console.WriteLine("Cosmos Application Preferred Regions: " + cosmosDb.client.ClientOptions.ApplicationPreferredRegions.ToString());
-                            Console.WriteLine("balh:" + 
-                            Console.WriteLine("Cosmos Application Region: " + cosmosDb.client.ClientOptions.ApplicationRegion);
+                            Console.WriteLine("Cosmos Application Preferred Regions: " + BuildPreferredRegionList(cosmosDb.client.ClientOptions.ApplicationPreferredRegions));
+                            Console.WriteLine("Cosmos Application Region: " + (string.IsNullOrWhiteSpace(cosmosDb.client.ClientOptions.ApplicationRegion) ? "Not Set" : cosmosDb.client.ClientOptions.ApplicationRegion));
                             Console.WriteLine("Connection Mode: " + cosmosDb.client.ClientOptions.ConnectionMode.ToString());
                             Console.WriteLine("Database Name:" + cosmosDb.database);
                             Console.WriteLine("Container Name: " + cosmosDb.collection);
                             Console.WriteLine("Request Units: " + cosmosDb.GetRequestUnits().ToString());
                             Console.WriteLine("Indexing Policy: " + cosmosDb.GetIndexingPolicy());
-                            Console.WriteLine("Consistency Level: " + cosmosDb.client.ClientOptions.ConsistencyLevel.ToString());
+                            Console.WriteLine("Consistency Level: " + (cosmosDb.client.ClientOptions.ConsistencyLevel == null ? "Not Set" : cosmosDb.client.ClientOptions.ConsistencyLevel.ToString()));
                         }
                         else if (serverLine == "query")
                         {
@@ -258,6 +257,28 @@ namespace CosmosDemo
                 }
             }                   
         }
+    
+        private static string BuildPreferredRegionList(IReadOnlyList<string> regionList)
+        {
+            if(regionList == null || regionList.Count == 0)
+            {
+                return "Not Set";
+            }
+
+            System.Text.StringBuilder result = new();
+            var tracker = 0;
+            foreach (var entry in regionList)
+            {
+                tracker++;
+                result.Append(entry);
+                if (tracker < regionList.Count)
+                {
+                    result.Append("; ");
+                }
+            }
+            return result.ToString();
+        }
+    
     }
 
     class CosmosClientWrapper
