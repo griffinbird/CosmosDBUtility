@@ -2,13 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-//and also
 using Newtonsoft.Json.Linq;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
-using Microsoft.Azure.Cosmos.Query;
-using Microsoft.Azure.Cosmos.Query.Core;
-using Microsoft.Azure.Cosmos.Query.Core.Metrics;
 using Microsoft.Extensions.Configuration;
 
 namespace CosmosDemo
@@ -29,7 +24,7 @@ namespace CosmosDemo
             Console.WriteLine("Enter country name:");
             string countryName = Console.ReadLine();
 
-            while (reset && !stop)
+             while (reset && !stop)
             {
 
                 Console.WriteLine("Enter amount of artists:");
@@ -73,10 +68,19 @@ namespace CosmosDemo
                         else if(serverLine == "status")
                         {                            
                             Console.WriteLine("Cosmos Service Endpoint: " + cosmosDb.client.Endpoint);                            
-                            Console.WriteLine("Cosmos Application Preferred Regions: " + BuildPreferredRegionList(cosmosDb.client.ClientOptions.ApplicationPreferredRegions));
                             Console.WriteLine("Cosmos Application Region: " + (string.IsNullOrWhiteSpace(cosmosDb.client.ClientOptions.ApplicationRegion) ? "Not Set" : cosmosDb.client.ClientOptions.ApplicationRegion));
                             Console.WriteLine("Connection Mode: " + cosmosDb.client.ClientOptions.ConnectionMode.ToString());
-                            Console.WriteLine("Database Name:" + cosmosDb.database);
+                            Console.WriteLine("Read Regions:");
+                            foreach(var region in cosmosDb.readRegions)
+                            {
+                                Console.WriteLine($" >> {region.Name}");
+                            }
+                            Console.WriteLine("Write Regions:");
+                            foreach(var region in cosmosDb.writeRegions)
+                            {
+                                Console.WriteLine($" >> {region.Name}");
+                            }
+                            Console.WriteLine("Database Name: " + cosmosDb.database);
                             Console.WriteLine("Container Name: " + cosmosDb.collection);
                             Console.WriteLine("Request Units: " + cosmosDb.GetRequestUnits().ToString());
                             Console.WriteLine("Indexing Policy: " + cosmosDb.GetIndexingPolicy());
@@ -89,13 +93,29 @@ namespace CosmosDemo
                         }
                         else if (serverLine == "georead")
                         {
-                            cosmosDb.ChangeGeoReads(true);
-                            Console.WriteLine("Enabled Geo-Replicated Reads");
+                            if(string.IsNullOrEmpty(cosmosDb.preferredRegion))
+                            {
+                                Console.WriteLine("To use Geo-Read you must define a value for 'PreferredRegion' in the appsettings.json file. Cosmos must be replicated to this Region.");
+                                Console.WriteLine("Value should be the string value of Microsoft.Azure.Cosmos.Regions - see: https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.cosmos.regions?view=azure-dotnet");
+                            }
+                            else
+                            {
+                                cosmosDb.ChangeGeoReads(true);
+                                Console.WriteLine("Enabled Geo-Replicated Read with Preferred Regio: {0}",cosmosDb.preferredRegion);
+                            }                              
                         }
                         else if (serverLine == "geowrite")
                         {
-                            cosmosDb.ChangeGeoWrite(true);
-                            Console.WriteLine("Enabled Geo-Replicated Writes");
+                            if(string.IsNullOrEmpty(cosmosDb.preferredRegion))
+                            {
+                                Console.WriteLine("To use Geo-Wite you must define a value for 'PreferredRegion' in the appsettings.json file. Cosmos must be replicated to this Region.");
+                                Console.WriteLine("Value should be the string value of Microsoft.Azure.Cosmos.Regions - see: https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.cosmos.regions?view=azure-dotnet");
+                            }
+                            else
+                            {
+                                cosmosDb.ChangeGeoWrite(true);
+                                Console.WriteLine($"Enabled Geo-Replicated Writes with Preferred Region: {0}",cosmosDb.preferredRegion);
+                            }
                         }
                         else if (serverLine == "nogeoread")
                         {
@@ -285,15 +305,18 @@ namespace CosmosDemo
     {
         private string endpointUrl;
         private string accountKey;
+
+        public IEnumerable<AccountRegion> readRegions;
+        public IEnumerable<AccountRegion> writeRegions;
         public string database;
         public string collection;
+        public string preferredRegion;
         private Container cosmosContainer;
         public string lastQueryMetrics;
         private bool geoRead = false;
         private bool geoWrite = false;
         private bool directMode = false;
         public CosmosClient client;
-
         string consistencyModel = "default";
         public bool stop = false;
         public int ExceptionCounter=0;
@@ -305,6 +328,8 @@ namespace CosmosDemo
             accountKey = configuration["AppSettings:GlobalDatabaseKey"];
             database = configuration["AppSettings:DatabaseName"];
             collection = configuration["AppSettings:CollectionName"];
+            preferredRegion = configuration["AppSettings:PreferredRegion"];
+
             this.initializeClient();
             /*uncomment if you need to create the Machines collection with the conflict feed enabled (portal doesn't have the option)
             client.CreateDocumentCollectionIfNotExistsAsync(
@@ -406,14 +431,14 @@ namespace CosmosDemo
         private void initializeClient()
         {
             var connPolicy = new CosmosClientOptions();
-            if (geoRead)
+            /*****
+             * Read the docs to understand:
+             * - Preferred and Primary Regions: https://docs.microsoft.com/en-us/azure/cosmos-db/troubleshoot-sdk-availability
+             * - Multi-master how-to: https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-multi-master?tabs=api-async#netv3
+             *****/
+            if (geoRead || geoWrite)
             {
-                connPolicy.ApplicationPreferredRegions = new List<string> { "Japan East" };
-            }
-            if(geoWrite)
-            {
-                // See: https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-multi-master?tabs=api-async#netv3
-                connPolicy.ApplicationRegion = "Japan East";
+                connPolicy.ApplicationRegion = preferredRegion;
             }
             // SDK v3 default is direct mode.
             if(!directMode)
@@ -443,7 +468,16 @@ namespace CosmosDemo
             }
             client = new CosmosClient(endpointUrl, accountKey, connPolicy);
             cosmosContainer = client.GetContainer(database, collection);
+            PopulateRegionInformation();
         }
+
+        private async Task PopulateRegionInformation()
+        {
+            var accountPropeties = await client.ReadAccountAsync();
+            this.readRegions = accountPropeties.ReadableRegions;
+            this.writeRegions = accountPropeties.WritableRegions;
+        }
+
         public void ChangeConsistencyModel(string consistencyModel)
         {
             this.consistencyModel = consistencyModel;
