@@ -472,9 +472,20 @@ namespace CosmosDemo
             initializeClient();
         }
 
-        public int GetRequestUnits()
+        public string GetRequestUnits()
         {
-            return cosmosContainer.ReadThroughputAsync().Result.GetValueOrDefault();
+            int? rus;
+            string requestUnits;
+            rus = cosmosContainer.ReadThroughputAsync().Result.GetValueOrDefault();
+            if (rus != 0)
+                requestUnits = rus.ToString() + " at the container level";
+            else
+            {
+                rus = client.GetDatabase(database).ReadThroughputAsync().Result.GetValueOrDefault();
+                requestUnits = rus.ToString() + " shared at the database level";
+            }
+            return requestUnits;
+
         }
 
         public string GetIndexingPolicy()
