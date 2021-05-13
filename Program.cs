@@ -36,7 +36,7 @@ namespace CosmosDemo
                 for (int i = 1; i <= artistCount; i++)
                 {
                     string internalArtistName = "a" + i.ToString();
-                    ArtistTrend currentArtist = new ArtistTrend(internalArtistName,countryName);
+                    ArtistTrend currentArtist = new ArtistTrend(internalArtistName, countryName);
                     currentArtist.currentDirection = TrendDirection.Bouncing;
                     artistRegistry[internalArtistName] = currentArtist;
                 }
@@ -122,7 +122,7 @@ namespace CosmosDemo
                             cosmosDb.ChangeGeoReads(false);
                             Console.WriteLine("Disabled Geo-Replicated Reads");
                         }
-                        else if(serverLine == "directmode")
+                        else if (serverLine == "directmode")
                         {
                             cosmosDb.ChangeConnectionMode(true);
                             Console.WriteLine("Enabled direct mode connection");
@@ -140,7 +140,7 @@ namespace CosmosDemo
 
                             while (progress < 100)
                             {
-                                progress = cosmosDb.GetIndexingProgressPercentage();                                
+                                progress = cosmosDb.GetIndexingProgressPercentage();
                                 Console.WriteLine("Indexing policy flip complete percentage: " + progress.ToString() + "%");
                                 Task.Delay(TimeSpan.FromMilliseconds(smallWaitTimeMilliseconds)).Wait();
                             }
@@ -151,8 +151,8 @@ namespace CosmosDemo
                             QueryDefinition sqlquery = new QueryDefinition(sqlQueryText)
                                                            .WithParameter("@internalName", artistRegistry.Keys.ElementAt(0));
                             cosmosDb.AnalyzePartitionInfo(sqlquery).Wait();
-                        }                       
-                        else if(serverLine == "metrics" || serverLine=="execquery")
+                        }
+                        else if (serverLine == "metrics" || serverLine == "execquery")
                         {
                             DateTime dtstart = DateTime.Now;
 
@@ -170,7 +170,7 @@ namespace CosmosDemo
                                     Console.WriteLine("You need to run 'execquery' first to populate metrics.");
                                 }
                             }
-                            else if(serverLine=="execquery")
+                            else if (serverLine == "execquery")
                             {
                                 QueryDefinition sqlquery = new QueryDefinition(sqlQueryText)
                                                            .WithParameter("@internalName", artistRegistry.Keys.ElementAt(0));
@@ -183,7 +183,7 @@ namespace CosmosDemo
                         }
                         else if (serverLine == "trend increase")
                         {
-                            foreach(ArtistTrend currentArtist in artistRegistry.Values)
+                            foreach (ArtistTrend currentArtist in artistRegistry.Values)
                             {
                                 currentArtist.currentDirection = TrendDirection.Increasing;
                             }
@@ -214,34 +214,34 @@ namespace CosmosDemo
                             DateTime dtstart = DateTime.Now;
                             cosmosDb.ReinitializeCounters();
                             Parallel.ForEach(artistRegistry.Values, (currentArtist) =>
-                             {
-                                 for (int i = 0; i < iterations; i++)
-                                 {
-                                     double rusIteration;
-                                     DateTime dt1 = DateTime.Now;
-                                     if (serverLine == "start write")
-                                     {
-                                         rusIteration = cosmosDb.ObjectOneSecondWriteWithDelay(currentArtist, delayMs).Result;
-                                     }
-                                     else if (serverLine == "start write conflict")
-                                     {
-                                         rusIteration = cosmosDb.ObjectOneSecondWriteWithConflict(currentArtist).Result;
-                                     }
-                                     else if (serverLine == "start read")
-                                     {
-                                         QueryDefinition sqlquery = new QueryDefinition(sqlQueryText)
-                                                                        .WithParameter("@artistName", currentArtist.artistName);
-                                         rusIteration = cosmosDb.ObjectOneSecondReadWithDelay(sqlquery, delayMs).Result;
-                                     }
-                                     else
-                                     {
-                                        throw new Exception("Command does not parse");  
-                                     }
+                            {
+                                for (int i = 0; i < iterations; i++)
+                                {
+                                    double rusIteration;
+                                    DateTime dt1 = DateTime.Now;
+                                    if (serverLine == "start write")
+                                    {
+                                        rusIteration = cosmosDb.ObjectOneSecondWriteWithDelay(currentArtist, delayMs).Result;
+                                    }
+                                    else if (serverLine == "start write conflict")
+                                    {
+                                        rusIteration = cosmosDb.ObjectOneSecondWriteWithConflict(currentArtist).Result;
+                                    }
+                                    else if (serverLine == "start read")
+                                    {
+                                        QueryDefinition sqlquery = new QueryDefinition(sqlQueryText)
+                                                                       .WithParameter("@artistName", currentArtist.artistName);
+                                        rusIteration = cosmosDb.ObjectOneSecondReadWithDelay(sqlquery, delayMs).Result;
+                                    }
+                                    else
+                                    {
+                                        throw new Exception("Command does not parse");
+                                    }
 
-                                     DateTime dt2 = DateTime.Now;
-                                     Console.WriteLine("Iteration " + i.ToString() + " for artist " + currentArtist.artistName + " completed in " + dt2.Subtract(dt1).TotalSeconds.ToString() + " and consumed " + rusIteration.ToString() + " request units.");
-                                 }
-                             });
+                                    DateTime dt2 = DateTime.Now;
+                                    Console.WriteLine("Iteration " + i.ToString() + " for artist " + currentArtist.artistName + " completed in " + dt2.Subtract(dt1).TotalSeconds.ToString() + " and consumed " + rusIteration.ToString() + " request units.");
+                                }
+                            });
                             DateTime dtstop = DateTime.Now;
                             double seconds = dtstop.Subtract(dtstart).TotalSeconds;
                             Console.WriteLine("Successful calls: " + cosmosDb.SuccesfulCallsCounter.ToString());
@@ -259,7 +259,7 @@ namespace CosmosDemo
                                 cosmosDb.ResizeRequestUnits(RUs).Wait();
                                 Console.WriteLine("Request units resized to: " + RUs.ToString() + " request units");
                             }
-                            else if(split[0] == "consistency")
+                            else if (split[0] == "consistency")
                             {
                                 cosmosDb.ChangeConsistencyModel(split[1]);
                                 Console.WriteLine("Consistency model changed to: " + split[1]);
@@ -275,12 +275,12 @@ namespace CosmosDemo
                         Console.WriteLine("Issue with command: " + e.Message);
                     }
                 }
-            }                   
+            }
         }
-    
+
         private static string BuildPreferredRegionList(IReadOnlyList<string> regionList)
         {
-            if(regionList == null || regionList.Count == 0)
+            if (regionList == null || regionList.Count == 0)
             {
                 return "Not Set";
             }
@@ -298,7 +298,7 @@ namespace CosmosDemo
             }
             return result.ToString();
         }
-    
+
     }
 
     class CosmosClientWrapper
@@ -317,10 +317,11 @@ namespace CosmosDemo
         private bool geoWrite = false;
         private bool directMode = false;
         public CosmosClient client;
-        string consistencyModel = "default";
+
+        string consistencyModel = "bounded";
         public bool stop = false;
-        public int ExceptionCounter=0;
-        public int SuccesfulCallsCounter=0;
+        public int ExceptionCounter = 0;
+        public int SuccesfulCallsCounter = 0;
 
         public CosmosClientWrapper(IConfigurationRoot configuration)
         {
@@ -331,7 +332,7 @@ namespace CosmosDemo
             preferredRegion = configuration["AppSettings:PreferredRegion"];
 
             this.initializeClient();
-            /*uncomment if you need to create the Machines collection with the conflict feed enabled (portal doesn't have the option)
+            /*uncomment if you need to create the document collection with the conflict feed enabled (portal doesn't have the option)
             client.CreateDocumentCollectionIfNotExistsAsync(
               UriFactory.CreateDatabaseUri(database), new DocumentCollection
               {
@@ -441,7 +442,7 @@ namespace CosmosDemo
                 connPolicy.ApplicationRegion = preferredRegion;
             }
             // SDK v3 default is direct mode.
-            if(!directMode)
+            if (!directMode)
             {
                 connPolicy.ConnectionMode = ConnectionMode.Gateway;
             }
@@ -450,7 +451,7 @@ namespace CosmosDemo
 
             switch (consistencyModel)
             {
-                 case "strong":
+                case "strong":
                     connPolicy.ConsistencyLevel = ConsistencyLevel.Strong;
                     break;
                 case "bounded":
@@ -467,6 +468,7 @@ namespace CosmosDemo
                     break;
             }
             client = new CosmosClient(endpointUrl, accountKey, connPolicy);
+            this.consistencyModel = client.ClientOptions.ConsistencyLevel.ToString();
             cosmosContainer = client.GetContainer(database, collection);
             PopulateRegionInformation();
         }
@@ -504,9 +506,20 @@ namespace CosmosDemo
             initializeClient();
         }
 
-        public int GetRequestUnits()
+        public string GetRequestUnits()
         {
-            return cosmosContainer.ReadThroughputAsync().Result.GetValueOrDefault();
+            int? rus;
+            string requestUnits;
+            rus = cosmosContainer.ReadThroughputAsync().Result.GetValueOrDefault();
+            if (rus != 0)
+                requestUnits = rus.ToString() + " at the container level";
+            else
+            {
+                rus = client.GetDatabase(database).ReadThroughputAsync().Result.GetValueOrDefault();
+                requestUnits = rus.ToString() + " shared at the database level";
+            }
+            return requestUnits;
+
         }
 
         public string GetIndexingPolicy()
@@ -519,13 +532,13 @@ namespace CosmosDemo
         {
             ContainerResponse response = await cosmosContainer.ReadContainerAsync();
 
-            if(response.Resource.IndexingPolicy.IndexingMode == IndexingMode.Consistent)
+            if (response.Resource.IndexingPolicy.IndexingMode == IndexingMode.Consistent)
             {
                 response.Resource.IndexingPolicy.IndexingMode = IndexingMode.None;
                 response.Resource.IndexingPolicy.IncludedPaths.Clear();
                 response.Resource.IndexingPolicy.ExcludedPaths.Clear();
             }
-            else if(response.Resource.IndexingPolicy.IndexingMode == IndexingMode.None)
+            else if (response.Resource.IndexingPolicy.IndexingMode == IndexingMode.None)
             {
                 response.Resource.IndexingPolicy.IndexingMode = IndexingMode.Consistent;
             }
@@ -562,7 +575,7 @@ namespace CosmosDemo
                             .Select(p => ((JProperty)p).Value)
                             .FirstOrDefault();
 
-            if(metricToken != null)
+            if (metricToken != null)
             {
                 lastQueryMetrics = metricToken.Value<string>();
             }
@@ -672,7 +685,7 @@ namespace CosmosDemo
 
         public async Task<double> WriteDocumentFromObject(Object obj)
         {
-            ItemResponse<JObject> itemResponse = await cosmosContainer.CreateItemAsync(JObject.Parse(obj.ToString()) );
+            ItemResponse<JObject> itemResponse = await cosmosContainer.CreateItemAsync(JObject.Parse(obj.ToString()));
             return itemResponse.RequestCharge;
         }
 
