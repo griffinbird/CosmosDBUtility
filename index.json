@@ -1,0 +1,26 @@
+{
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+        {
+            "path": "/*"
+        }
+    ],
+    "excludedPaths": [
+        {
+            "path": "/\"_etag\"/?"
+        }
+    ],
+    "CompositeIndexes": [
+        [
+            {
+                "path": "/artistName",
+                "order": "ascending"
+            },
+            {
+                "path": "/artistListenCountTimestamp",
+                "order": "descending"
+            }
+        ]
+    ]
+}

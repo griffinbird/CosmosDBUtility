@@ -119,7 +119,7 @@ namespace CosmosDemo
         }
 
         public static string[] artistList  = {
-         "greenday"
+"greenday"
 ,
 "slipknot"
 ,

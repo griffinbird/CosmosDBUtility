@@ -13,7 +13,7 @@ namespace CosmosDemo
         static void Main(string[] args)
         {
             IConfigurationRoot configuration = new ConfigurationBuilder()
-                    .AddJsonFile("appSettings.json")
+                    .AddJsonFile("appsettings.json")
                     .Build();
 
             Console.WriteLine("Cosmos Demo");
@@ -149,7 +149,7 @@ namespace CosmosDemo
                         else if (serverLine == "partitions")
                         {
                             QueryDefinition sqlquery = new QueryDefinition(sqlQueryText)
-                                                           .WithParameter("@internalName", artistRegistry.Keys.ElementAt(0));
+                            .WithParameter("@internalName", artistRegistry.Keys.ElementAt(0));
                             cosmosDb.AnalyzePartitionInfo(sqlquery).Wait();
                         }
                         else if (serverLine == "metrics" || serverLine == "execquery")
@@ -173,7 +173,7 @@ namespace CosmosDemo
                             else if (serverLine == "execquery")
                             {
                                 QueryDefinition sqlquery = new QueryDefinition(sqlQueryText)
-                                                           .WithParameter("@internalName", artistRegistry.Keys.ElementAt(0));
+                                .WithParameter("@internalName", artistRegistry.Keys.ElementAt(0));
                                 Console.WriteLine(cosmosDb.ExecuteQuery(sqlquery));
                                 Console.WriteLine("");
                             }
@@ -213,7 +213,10 @@ namespace CosmosDemo
                         {
                             DateTime dtstart = DateTime.Now;
                             cosmosDb.ReinitializeCounters();
-                            Parallel.ForEach(artistRegistry.Values, (currentArtist) =>
+                            Parallel.ForEach(artistRegistry.Values, new ParallelOptions(){
+
+                                MaxDegreeOfParallelism = 4
+                            }, (currentArtist) =>
                             {
                                 for (int i = 0; i < iterations; i++)
                                 {
@@ -230,7 +233,7 @@ namespace CosmosDemo
                                     else if (serverLine == "start read")
                                     {
                                         QueryDefinition sqlquery = new QueryDefinition(sqlQueryText)
-                                                                       .WithParameter("@artistName", currentArtist.artistName);
+                                        .WithParameter("@artistName", currentArtist.artistName);
                                         rusIteration = cosmosDb.ObjectOneSecondReadWithDelay(sqlquery, delayMs).Result;
                                     }
                                     else
@@ -318,7 +321,7 @@ namespace CosmosDemo
         private bool directMode = false;
         public CosmosClient client;
 
-        string consistencyModel = "bounded";
+        string consistencyModel = "session";
         public bool stop = false;
         public int ExceptionCounter = 0;
         public int SuccesfulCallsCounter = 0;
@@ -675,8 +678,9 @@ namespace CosmosDemo
 
                     this.SuccesfulCallsCounter++;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    //Console.WriteLine(e);
                     this.ExceptionCounter++;
                 }
             }
