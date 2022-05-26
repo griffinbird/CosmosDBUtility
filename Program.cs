@@ -321,7 +321,7 @@ namespace CosmosDemo
         private bool directMode = false;
         public CosmosClient client;
 
-        string consistencyModel = "session";
+        string consistencyModel = "bounded";
         public bool stop = false;
         public int ExceptionCounter = 0;
         public int SuccesfulCallsCounter = 0;
