@@ -101,7 +101,7 @@ namespace CosmosDemo
                             else
                             {
                                 cosmosDb.ChangeGeoReads(true);
-                                Console.WriteLine("Enabled Geo-Replicated Read with Preferred Regio: {0}",cosmosDb.preferredRegion);
+                                Console.WriteLine("Enabled Geo-Replicated Read with Preferred Region: {0}",cosmosDb.preferredRegion);
                             }                              
                         }
                         else if (serverLine == "geowrite")
@@ -114,7 +114,7 @@ namespace CosmosDemo
                             else
                             {
                                 cosmosDb.ChangeGeoWrite(true);
-                                Console.WriteLine($"Enabled Geo-Replicated Writes with Preferred Region: {0}",cosmosDb.preferredRegion);
+                                Console.WriteLine("Enabled Geo-Replicated Writes with Preferred Region: {0}",cosmosDb.preferredRegion);
                             }
                         }
                         else if (serverLine == "nogeoread")
